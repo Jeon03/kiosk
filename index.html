@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동양미래대학교 건물 안내</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="kiosk-container">
+
+        <header>
+            <h1>동양미래대학교</h1>
+            <p>건물 안내</p>
+        </header>
+
+        <main>
+            <!-- 건물 선택 화면 -->
+            <section id="building-selection" class="content-section active">
+                <h2>어느 건물을 안내해드릴까요?</h2>
+                <nav class="building-nav">
+                    <button class="building-button">1호관(대학본부)</button>
+                    <button class="building-button">1호관(도서관)</button>
+                    <button class="building-button">2호관</button>
+                    <button data-target="building-3" class="building-button">3호관</button>
+                    <button class="building-button">4호관</button>
+                    <button class="building-button">5호관</button>
+                    <button class="building-button">6호관</button>
+                    <button class="building-button">7호관</button>
+                    <button class="building-button">8호관</button>
+                    <button class="building-button">DMMC</button>
+                    <button class="building-button">기숙사</button>
+                    <button class="building-button">원서접수창구</button>
+                </nav>
+            </section>
+
+            <!-- 3호관 상세 정보 화면 -->
+            <section id="building-3" class="content-section">
+                <header class="building-header">
+                    <h2>3호관</h2>
+                    <button id="back-button" class="back-button"> &lt; 뒤로가기</button>
+                </header>
+                <div class="floor-info">
+                    <h3>1F</h3>
+                    <ul class="info-list">
+                        <li>총학생회</li>
+                        <li>보건실</li>
+                        <li>학생 커뮤니T 공간</li>
+                        <li>학생상담센터</li>
+                        <li>장애학생지원실</li>
+                        <li>강사연구실</li>
+                    </ul>
+                </div>
+                <div class="floor-info">
+                    <h3>2F</h3>
+                    <ul class="info-list">
+                        <li>컴퓨터공학부</li>
+                        <li>전산실습실</li>
+                    </ul>
+                </div>
+                <div class="floor-info">
+                    <h3>3F</h3>
+                    <ul class="info-list">
+                        <li>전산실습실</li>
+                    </ul>
+                </div>
+                <div class="floor-info">
+                    <h3>4F</h3>
+                    <ul class="info-list">
+                        <li>전기전자통신공학부</li>
+                        <li>실습실</li>
+                    </ul>
+                </div>
+                <div class="floor-info">
+                    <h3>5F</h3>
+                    <ul class="info-list">
+                        <li>실습실</li>
+                        <li>강의실</li>
+                    </ul>
+                </div>
+                 <div class="kiosk-location">
+                    <p><span class="current-location">현재 위치</span> 키오스크는 <strong>3호관</strong>에 있습니다.</p>
+                </div>
+            </section> 
+
+        </main>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
