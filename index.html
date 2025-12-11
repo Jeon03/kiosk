@@ -1,39 +1,467 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dongyang</title>
-
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      background: black;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    video {
-      height: 100vh;         /* 세로 영상 전체 화면 */
-      width: auto;           /* 비율 유지 */
-      display: block;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동양미래대학교 수강신청 AI 도우미</title>
+    
+    <!-- Tailwind CSS (스타일링) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons (아이콘) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- 폰트 설정 -->
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body { font-family: 'Pretendard', sans-serif; }
+        
+        /* 스크롤바 숨기기 (깔끔한 UI용) */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* 애니메이션 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
 </head>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen p-4">
 
-<body>
-  <video autoplay loop muted playsinline>
-    <source src="sora-video.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
+    <!-- 키오스크 프레임 -->
+    <div class="w-full max-w-md bg-white h-[850px] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col relative border-8 border-gray-800">
+        
+        <!-- 상단 헤더 -->
+        <div class="bg-blue-600 p-6 pt-10 text-white flex justify-between items-center shadow-md z-10">
+            <div>
+                <h1 class="text-xl font-bold flex items-center gap-2">
+                    <i data-lucide="school"></i> DMU 수강신청 AI
+                </h1>
+                <p class="text-sm opacity-80 mt-1">스마트한 시간표 설계를 도와드려요</p>
+            </div>
+            <div class="bg-blue-500 p-2 rounded-full">
+                <i data-lucide="message-square" width="20"></i>
+            </div>
+        </div>
+
+        <!-- 메인 컨텐츠 영역 -->
+        <div id="content-area" class="flex-1 overflow-y-auto bg-gray-50 p-6 scrollbar-hide relative">
+            <!-- 자바스크립트로 내용이 동적으로 렌더링 됩니다 -->
+        </div>
+
+        <!-- 하단 네비게이션 -->
+        <div id="footer-area" class="bg-white p-4 border-t border-gray-100 absolute bottom-0 w-full">
+            <!-- 자바스크립트로 버튼이 동적으로 렌더링 됩니다 -->
+        </div>
+
+    </div>
+
+    <script>
+        // --- [데이터] 동양미래대학교 학부/학과 구조 ---
+        const DEPT_STRUCTURE = {
+            "기계공학부": ["기계공학과", "기계설계공학과"],
+            "로봇자동화공학부": ["자동화공학과", "로봇소프트웨어과"],
+            "전기전자통신공학부": ["전기공학과", "반도체전자공학과", "정보통신공학과", "소방안전관리과"],
+            "컴퓨터공학부": ["웹응용소프트웨어공학과", "컴퓨터소프트웨어공학과", "인공지능소프트웨어학과"],
+            "생활환경공학부": ["생명화학공학과", "바이오융합공학과", "건축과", "실내건축디자인과", "시각디자인과", "AR·VR콘텐츠디자인과"],
+            "경영학부": ["경영학과", "세무회계학과", "유통마케팅학과", "호텔관광학과", "경영정보학과", "빅데이터경영과"]
+        };
+
+        // --- [데이터베이스] 강의 목록 (교수명 제외됨) ---
+        const COURSE_DB = [
+            { id: 1, code: "CS1001", section: "A", name: "웹프로그래밍기초", type: "전공", type_detail: "전공선택", credit: 3, dept: "웹응용소프트웨어공학과", grade: 1, tags: ["코딩기초", "실습위주", "팀플없음"], desc: "HTML/CSS를 배우는 입문 수업입니다. 코딩을 처음 접하는 학생들에게 적합합니다." },
+            { id: 2, code: "AI2002", section: "B", name: "인공지능개론", type: "전공", type_detail: "전공필수", credit: 3, dept: "인공지능소프트웨어학과", grade: 2, tags: ["이론위주", "시험어려움", "최신기술"], desc: "AI의 역사와 기초 이론(머신러닝, 딥러닝)을 다룹니다." },
+            { id: 3, code: "CS2004", section: "A", name: "창의적공학설계", type: "전공", type_detail: "전공필수", credit: 2, dept: "컴퓨터소프트웨어공학과", grade: 2, tags: ["팀플필수", "발표많음", "학점잘줌"], desc: "팀을 이루어 캡스톤 디자인 프로젝트를 진행합니다." },
+            { id: 4, code: "CS3001", section: "C", name: "서버구축실무", type: "전공", type_detail: "전공심화", credit: 3, dept: "컴퓨터소프트웨어공학과", grade: 3, tags: ["실습위주", "취업연계", "어려움"], desc: "Linux 환경에서 AWS 클라우드 서버를 구축하는 실습을 진행합니다." },
+            { id: 7, code: "DB2001", section: "A", name: "데이터베이스", type: "전공", type_detail: "전공선택", credit: 3, dept: "웹응용소프트웨어공학과", grade: 2, tags: ["시험중요", "이론+실습", "자격증"], desc: "SQL 기초 문법 및 DB 모델링(ERD) 설계를 배웁니다." },
+            
+            { id: 10, code: "RB1005", section: "A", name: "로봇제어기초", type: "전공", type_detail: "전공선택", credit: 3, dept: "로봇소프트웨어과", grade: 1, tags: ["수학필요", "실습많음", "아두이노"], desc: "C언어를 활용하여 로봇 팔(Manipulator) 제어의 기초를 배웁니다." },
+            { id: 11, code: "AT2003", section: "B", name: "자동화시스템", type: "전공", type_detail: "전공필수", credit: 3, dept: "자동화공학과", grade: 2, tags: ["장비실습", "팀플있음", "PLC"], desc: "PLC 프로그래밍 및 스마트 공장 자동화 시스템을 다룹니다." },
+            { id: 12, code: "ME1002", section: "A", name: "기계공작법", type: "전공", type_detail: "전공기초", credit: 2, dept: "기계공학과", grade: 1, tags: ["안전중요", "실기평가", "선반/밀링"], desc: "기계 가공의 기초 원리를 배우고 직접 부품을 가공합니다." },
+
+            { id: 20, code: "MK1001", section: "A", name: "마케팅원론", type: "전공", type_detail: "전공선택", credit: 3, dept: "유통마케팅학과", grade: 1, tags: ["발표많음", "재밌음", "사례분석"], desc: "마케팅의 기본 개념과 최신 트렌드 전략을 학습합니다." },
+            { id: 21, code: "AC1002", section: "B", name: "회계기초", type: "전공", type_detail: "전공필수", credit: 3, dept: "세무회계학과", grade: 1, tags: ["숫자중요", "자격증연계", "꼼꼼함"], desc: "회계의 기초 원리와 재무제표 작성법을 배웁니다." },
+
+            { id: 5, code: "GE0001", section: "Online", name: "영화로 보는 철학", type: "교양", type_detail: "교양선택", credit: 2, dept: "교양", grade: 0, tags: ["시험없음", "과제대체", "꿀강"], desc: "영화를 감상하고 철학적 주제에 대해 감상문을 제출합니다." },
+            { id: 6, code: "GE0005", section: "A", name: "글쓰기와 토론", type: "교양", type_detail: "교양필수", credit: 2, dept: "교양", grade: 0, tags: ["발표많음", "팀플있음", "의사소통"], desc: "논리적인 글쓰기 능력과 토론 매너를 배웁니다." },
+            { id: 8, code: "GE0012", section: "C", name: "생활 속의 법률", type: "교양", type_detail: "교양선택", credit: 2, dept: "교양", grade: 0, tags: ["암기위주", "유용함", "시험쉬움"], desc: "실생활에 꼭 필요한 법률 상식과 계약서 작성법을 배웁니다." }
+        ];
+
+        // --- 상태 관리 (Global State) ---
+        let state = {
+            step: 0, // 0:선택, 1:질문, 2:로딩, 3:결과
+            selection: { faculty: '', dept: '', grade: '', type: '' },
+            query: '',
+            results: [],
+            aiComment: ''
+        };
+
+        // --- UI 렌더링 함수 ---
+        function render() {
+            const contentArea = document.getElementById('content-area');
+            const footerArea = document.getElementById('footer-area');
+            
+            contentArea.innerHTML = '';
+            footerArea.innerHTML = '';
+
+            // STEP 0: 기본 정보 선택
+            if (state.step === 0) {
+                renderStep0(contentArea);
+                renderFooterStep0(footerArea);
+            }
+            // STEP 1: 질문 입력
+            else if (state.step === 1) {
+                renderStep1(contentArea);
+                renderFooterStep1(footerArea);
+            }
+            // STEP 2: 로딩
+            else if (state.step === 2) {
+                renderStep2(contentArea);
+            }
+            // STEP 3: 결과
+            else if (state.step === 3) {
+                renderStep3(contentArea);
+                renderFooterStep3(footerArea);
+            }
+
+            // 아이콘 리로드
+            lucide.createIcons();
+        }
+
+        // --- Step 별 렌더링 로직 ---
+
+        function renderStep0(container) {
+            // 헤더 텍스트
+            const header = document.createElement('div');
+            header.className = "text-center space-y-2 mb-8 animate-fade-in";
+            header.innerHTML = `
+                <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-full">STEP 1</span>
+                <h2 class="text-2xl font-bold text-gray-800">소속 학과를 알려주세요</h2>
+                <p class="text-gray-500 text-sm">정확한 추천을 위해 정보가 필요해요.</p>
+            `;
+            container.appendChild(header);
+
+            // 1. 학부/학과 선택
+            const section1 = document.createElement('div');
+            section1.className = "space-y-3 mb-6 animate-fade-in";
+            section1.innerHTML = `<label class="text-sm font-bold text-gray-600 flex items-center gap-2"><i data-lucide="graduation-cap" width="16"></i> 소속 선택</label>`;
+            
+            if (!state.selection.faculty) {
+                // 학부 선택 그리드
+                const facultyGrid = document.createElement('div');
+                facultyGrid.className = "grid grid-cols-2 gap-2";
+                Object.keys(DEPT_STRUCTURE).forEach(fac => {
+                    const btn = document.createElement('button');
+                    btn.className = "p-4 rounded-xl border text-sm font-bold bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all flex flex-col items-center gap-2 text-center h-24 justify-center shadow-sm";
+                    btn.innerHTML = `<i data-lucide="building-2" class="opacity-50"></i>${fac}`;
+                    btn.onclick = () => setState('selection', { ...state.selection, faculty: fac, dept: '' });
+                    facultyGrid.appendChild(btn);
+                });
+                section1.appendChild(facultyGrid);
+            } else {
+                // 학부 선택됨 -> 학과 리스트
+                const selectedHeader = document.createElement('div');
+                selectedHeader.className = "flex justify-between items-center bg-blue-50 p-3 rounded-lg border border-blue-100 mb-2";
+                selectedHeader.innerHTML = `
+                    <span class="text-blue-800 font-bold text-sm flex items-center gap-2"><i data-lucide="building-2" width="16"></i> ${state.selection.faculty}</span>
+                `;
+                const backBtn = document.createElement('button');
+                backBtn.className = "text-xs bg-white border border-gray-200 px-2 py-1 rounded text-gray-500 hover:text-red-500 flex items-center gap-1";
+                backBtn.innerHTML = `<i data-lucide="chevron-left" width="12"></i> 다시 선택`;
+                backBtn.onclick = () => setState('selection', { ...state.selection, faculty: '' });
+                selectedHeader.appendChild(backBtn);
+                section1.appendChild(selectedHeader);
+
+                const deptList = document.createElement('div');
+                deptList.className = "grid grid-cols-1 gap-2";
+                DEPT_STRUCTURE[state.selection.faculty].forEach(dept => {
+                    const btn = document.createElement('button');
+                    const isSelected = state.selection.dept === dept;
+                    btn.className = `p-3 rounded-xl border text-left px-4 font-medium transition-all flex justify-between items-center ${isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
+                    btn.innerHTML = `${dept} ${isSelected ? '<i data-lucide="check-circle" width="16"></i>' : ''}`;
+                    btn.onclick = () => setState('selection', { ...state.selection, dept: dept });
+                    deptList.appendChild(btn);
+                });
+                section1.appendChild(deptList);
+            }
+            container.appendChild(section1);
+
+            // 2. 학년 선택
+            const section2 = document.createElement('div');
+            const isDeptSelected = !!state.selection.dept;
+            section2.className = `space-y-3 mb-6 transition-opacity duration-300 ${!isDeptSelected ? 'opacity-40 pointer-events-none' : 'opacity-100'}`;
+            section2.innerHTML = `<label class="text-sm font-bold text-gray-600 flex items-center gap-2"><i data-lucide="star" width="16"></i> 학년</label>`;
+            const gradeGroup = document.createElement('div');
+            gradeGroup.className = "flex gap-2";
+            ['1', '2', '3', '4'].forEach(g => {
+                const btn = document.createElement('button');
+                const isSelected = state.selection.grade === g;
+                btn.className = `flex-1 p-3 rounded-xl border text-sm font-medium transition-all ${isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
+                btn.textContent = `${g}학년`;
+                btn.onclick = () => setState('selection', { ...state.selection, grade: g });
+                gradeGroup.appendChild(btn);
+            });
+            section2.appendChild(gradeGroup);
+            container.appendChild(section2);
+
+            // 3. 이수 구분 선택
+            const section3 = document.createElement('div');
+            const isGradeSelected = !!state.selection.grade;
+            section3.className = `space-y-3 pb-20 transition-opacity duration-300 ${!isGradeSelected ? 'opacity-40 pointer-events-none' : 'opacity-100'}`;
+            section3.innerHTML = `<label class="text-sm font-bold text-gray-600 flex items-center gap-2"><i data-lucide="book-open" width="16"></i> 이수 구분</label>`;
+            const typeGroup = document.createElement('div');
+            typeGroup.className = "flex gap-2";
+            ['전공', '교양'].forEach(t => {
+                const btn = document.createElement('button');
+                const isSelected = state.selection.type === t;
+                btn.className = `flex-1 p-4 rounded-xl border text-lg font-bold transition-all ${isSelected ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg transform scale-105' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
+                btn.textContent = t;
+                btn.onclick = () => setState('selection', { ...state.selection, type: t });
+                typeGroup.appendChild(btn);
+            });
+            section3.appendChild(typeGroup);
+            container.appendChild(section3);
+        }
+
+        function renderFooterStep0(container) {
+            const isValid = state.selection.dept && state.selection.grade && state.selection.type;
+            const btn = document.createElement('button');
+            btn.className = `w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all ${isValid ? 'bg-blue-600 text-white shadow-lg hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`;
+            btn.innerHTML = `다음 단계로 <i data-lucide="chevron-right"></i>`;
+            btn.disabled = !isValid;
+            btn.onclick = () => { if(isValid) setState('step', 1); };
+            container.appendChild(btn);
+        }
+
+        function renderStep1(container) {
+            container.innerHTML = `
+                <div class="space-y-6 animate-fade-in h-full flex flex-col">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                        <p class="text-xs text-gray-400 mb-1">현재 선택된 정보</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-md font-bold">${state.selection.dept}</span>
+                            <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-md font-bold">${state.selection.grade}학년</span>
+                            <span class="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-md font-bold">${state.selection.type}</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded-full">STEP 2</span>
+                        <h2 class="text-2xl font-bold text-gray-800 mt-2">무엇이 궁금한가요?</h2>
+                        <p class="text-gray-500 text-sm">AI가 강의계획서를 분석해 추천해드려요.</p>
+                    </div>
+
+                    <div class="flex-1 flex flex-col justify-center gap-4">
+                        <div class="relative">
+                            <textarea id="queryInput"
+                                class="w-full h-32 p-4 rounded-2xl border-2 border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none text-lg transition-all"
+                                placeholder="궁금한 내용을 입력해주세요.">${state.query}</textarea>
+                            <div class="absolute bottom-3 right-3 bg-gray-100 p-2 rounded-full text-gray-500">
+                                <i data-lucide="mic" width="20"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            // 이벤트 바인딩
+            container.querySelector('#queryInput').addEventListener('input', (e) => {
+                state.query = e.target.value;
+                // input 이벤트에서는 전체 리렌더링 하지 않고 버튼 상태만 업데이트하기 위해 별도 처리 가능하나, 
+                // 여기선 간단하게 DOM 유지하며 상태만 업데이트, 버튼 리렌더링은 footer에서 처리해야 함.
+                // 편의상 render() 호출 안하고 footer 버튼만 갱신
+                const footerBtn = document.getElementById('searchBtn');
+                if(state.query) {
+                    footerBtn.disabled = false;
+                    footerBtn.className = "flex-[2] py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all bg-indigo-600 text-white shadow-lg hover:bg-indigo-700";
+                } else {
+                    footerBtn.disabled = true;
+                    footerBtn.className = "flex-[2] py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all bg-gray-200 text-gray-400";
+                }
+            });
+        }
+
+        function renderFooterStep1(container) {
+            const wrapper = document.createElement('div');
+            wrapper.className = "flex gap-2";
+            
+            const prevBtn = document.createElement('button');
+            prevBtn.className = "flex-1 py-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200";
+            prevBtn.innerText = "이전";
+            prevBtn.onclick = () => setState('step', 0);
+            
+            const searchBtn = document.createElement('button');
+            searchBtn.id = "searchBtn";
+            const hasQuery = !!state.query;
+            searchBtn.className = `flex-[2] py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all ${hasQuery ? 'bg-indigo-600 text-white shadow-lg hover:bg-indigo-700' : 'bg-gray-200 text-gray-400'}`;
+            searchBtn.innerHTML = `AI에게 물어보기 <i data-lucide="search" width="20"></i>`;
+            searchBtn.disabled = !hasQuery;
+            searchBtn.onclick = handleSearch;
+
+            wrapper.appendChild(prevBtn);
+            wrapper.appendChild(searchBtn);
+            container.appendChild(wrapper);
+        }
+
+        function renderStep2(container) {
+            container.innerHTML = `
+                <div class="h-full flex flex-col justify-center items-center space-y-6 animate-pulse">
+                    <div class="w-20 h-20 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    <div class="text-center space-y-2">
+                        <h3 class="text-xl font-bold text-gray-800">AI 분석 중...</h3>
+                        <p class="text-gray-500">강의계획서 320개를 읽고 있어요.</p>
+                        <p class="text-sm text-blue-600 font-medium mt-2">"${state.query}"</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStep3(container) {
+            const wrapper = document.createElement('div');
+            wrapper.className = "space-y-6 animate-fade-in pb-20";
+
+            // AI 코멘트
+            wrapper.innerHTML += `
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <div class="flex items-start gap-3">
+                        <div class="bg-blue-600 p-2 rounded-full text-white mt-1">
+                            <i data-lucide="message-square" width="16"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-blue-900 text-sm mb-1">AI 추천 코멘트</p>
+                            <p class="text-gray-700 text-sm leading-relaxed">${state.aiComment}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 결과 리스트
+            const listContainer = document.createElement('div');
+            listContainer.className = "space-y-4";
+            
+            if (state.results.length > 0) {
+                state.results.forEach((course, idx) => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-5 rounded-2xl shadow-md border border-gray-100 hover:border-blue-300 transition-all cursor-pointer group";
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="flex gap-2">
+                                <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded">${course.type_detail}</span>
+                                <span class="bg-indigo-50 text-indigo-600 text-xs font-bold px-2 py-1 rounded">${course.credit}학점</span>
+                            </div>
+                            ${idx === 0 ? '<span class="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded flex items-center gap-1">🥇 1순위</span>' : ''}
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-1 group-hover:text-blue-600 flex items-center gap-2">
+                            ${course.name} <span class="text-xs text-gray-400 font-normal">(${course.code})</span>
+                        </h3>
+                        <div class="flex items-center gap-3 text-sm text-gray-500 mb-3">
+                            <span class="flex items-center gap-1"><i data-lucide="clock" width="14"></i> ${course.section}반</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-2 bg-gray-50 p-3 rounded-lg border border-gray-100">${course.desc}</p>
+                        <div class="flex flex-wrap gap-2">
+                            ${course.tags.map(tag => `<span class="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-md font-medium">#${tag}</span>`).join('')}
+                        </div>
+                    `;
+                    listContainer.appendChild(card);
+                });
+            } else {
+                listContainer.innerHTML = `
+                    <div class="text-center py-10 text-gray-400">
+                        <p>조건에 맞는 과목을 찾지 못했어요 😢</p>
+                        <p class="text-xs mt-2">다른 검색어나 조건을 시도해보세요.</p>
+                    </div>
+                `;
+            }
+            wrapper.appendChild(listContainer);
+            container.appendChild(wrapper);
+        }
+
+        function renderFooterStep3(container) {
+            const btn = document.createElement('button');
+            btn.className = "w-full py-4 bg-gray-800 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg hover:bg-gray-900";
+            btn.innerHTML = `<i data-lucide="refresh-ccw" width="20"></i> 처음으로 돌아가기`;
+            btn.onclick = resetAll;
+            container.appendChild(btn);
+        }
+
+
+        // --- 로직 함수들 ---
+
+        function setState(key, value) {
+            if (key === 'selection') {
+                state.selection = value;
+            } else if (key === 'step') {
+                state.step = value;
+            } else if (key === 'query') {
+                state.query = value;
+            } else if (key === 'reset') {
+                state = {
+                    step: 0,
+                    selection: { faculty: '', dept: '', grade: '', type: '' },
+                    query: '',
+                    results: [],
+                    aiComment: ''
+                };
+            }
+            render();
+        }
+
+        function handleSearch() {
+            if (!state.query) return;
+            state.step = 2; // Loading
+            render();
+
+            // 가상의 API 호출 지연
+            setTimeout(() => {
+                // 1. 필터링
+                let filtered = COURSE_DB.filter(c => {
+                    const strictDeptMatch = state.selection.type === '교양' ? c.type === '교양' : c.dept === state.selection.dept;
+                    const gradeMatch = state.selection.type === '교양' ? true : c.grade === parseInt(state.selection.grade);
+                    const typeMatch = c.type === state.selection.type;
+                    return strictDeptMatch && gradeMatch && typeMatch;
+                });
+
+                // Fallback (전공인데 결과 없으면 학부 범위 등 포함 - 여기선 단순화)
+                if (filtered.length === 0 && state.selection.type === '전공') {
+                    filtered = COURSE_DB.filter(c => (c.dept === state.selection.dept || state.selection.faculty.includes("학부")) && c.type === '전공');
+                }
+
+                // 2. 검색어 스코어링
+                const queryLower = state.query.toLowerCase();
+                filtered = filtered.map(course => {
+                    let score = 0;
+                    if (queryLower.includes("팀플") && course.tags.includes("팀플없음")) score += 10;
+                    if (queryLower.includes("팀플") && course.tags.includes("팀플필수")) score -= 10;
+                    if (queryLower.includes("시험") && course.tags.includes("시험없음")) score += 5;
+                    if (queryLower.includes("꿀") && course.tags.includes("꿀강")) score += 10;
+                    if (queryLower.includes("코딩") && course.tags.includes("코딩기초")) score += 5;
+                    if (course.name.includes(state.query) || course.desc.includes(state.query)) score += 3;
+                    score += 1;
+                    return { ...course, score };
+                }).sort((a, b) => b.score - a.score);
+
+                state.results = filtered.slice(0, 3);
+                state.aiComment = `선택하신 [${state.selection.dept} ${state.selection.grade}학년 / ${state.selection.type}] 조건에서 "${state.query}"에 가장 적합한 강의를 찾았습니다.`;
+                state.step = 3;
+                render();
+            }, 1500);
+        }
+
+        function resetAll() {
+            setState('reset');
+        }
+
+        // 초기 실행
+        render();
+
+    </script>
 </body>
 </html>
